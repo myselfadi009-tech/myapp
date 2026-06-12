@@ -1,0 +1,29 @@
+.charts-section { margin-top: 1.5rem; }
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1200px) { .charts-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px)  { .charts-grid { grid-template-columns: 1fr; } }
+
+.chart-card {
+  padding: 1.25rem;
+  transition: all .3s;
+}
+.chart-card:hover { box-shadow: var(--glow); }
+
+.chart-card h4 {
+  font-family: 'Orbitron', monospace;
+  font-size: .65rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+}
+
+.chart-body { height: 140px; }
+.chart-body-sm { height: 130px; }

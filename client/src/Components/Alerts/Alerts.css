@@ -1,0 +1,59 @@
+.alerts-wrapper { padding: 1.25rem; display: flex; flex-direction: column; }
+
+.alerts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .75rem;
+}
+
+.alert-count {
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.4);
+  color: var(--danger);
+  font-family: 'Orbitron', monospace;
+  font-size: .65rem;
+  font-weight: 700;
+  padding: .2rem .55rem;
+  border-radius: 12px;
+}
+
+.alerts-body {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  padding: .65rem .75rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border-left: 3px solid;
+  overflow: hidden;
+}
+
+.alert-item i { font-size: .9rem; flex-shrink: 0; margin-top: .05rem; }
+
+.alert-text {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  min-width: 0;
+}
+
+.alert-msg {
+  font-size: .82rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.alert-time {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .7rem;
+  color: var(--text-muted);
+}

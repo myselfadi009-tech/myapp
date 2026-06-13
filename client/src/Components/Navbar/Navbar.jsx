@@ -38,8 +38,8 @@ export default function Navbar() {
           <span className="logo-ring" />
         </div>
         <div className="nav-title">
-          <span className="brand-main">SMART TRAFFIC</span>
-          <span className="brand-sub">AI MANAGEMENT SYSTEM</span>
+          <span className="brand-main">SmartRoad Command</span>
+          <span className="brand-sub">AI Traffic MANAGEMENT SYSTEM</span>
         </div>
       </NavLink>
 
@@ -70,9 +70,7 @@ export default function Navbar() {
         <div className="nav-divider" />
 
         <div className="nav-pills">
-          <span className="pill pill-weather">
-            <i className="bi bi-cloud-sun-fill" /> 24°C
-          </span>
+          
           <span className="pill pill-status">
             <span className="pulse-dot" />
             ONLINE

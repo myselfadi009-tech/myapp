@@ -1,153 +1,224 @@
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement,
-  LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler,
-} from 'chart.js'
-import { Line, Bar, Doughnut } from 'react-chartjs-2'
+  ResponsiveContainer, AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip,
+} from 'recharts'
+import { motion } from 'framer-motion'
 import './Charts.css'
 
-ChartJS.register(
-  CategoryScale, LinearScale, PointElement, LineElement,
-  BarElement, ArcElement, Title, Tooltip, Legend, Filler,
-)
-
-const labels30 = Array.from({ length: 30 }, (_, i) => `${i}s`)
-
-const lineOpts = (label, color) => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: { duration: 400 },
-  plugins: { legend: { display: false } },
-  scales: {
-    x: { ticks: { color: '#475569', font: { size: 9 } }, grid: { color: '#1e293b' } },
-    y: { ticks: { color: '#475569', font: { size: 9 } }, grid: { color: '#1e293b' } },
+/* ─── Chart config ─────────────────────────────────────────────────────────── */
+const CHART_DEFS = [
+  {
+    key:   'vehicle_count',
+    label: 'Vehicle Count',
+    unit:  'veh',
+    color: '#00FFA3',
+    icon:  'bi-car-front-fill',
+    yMax:  50,
+    fmt:   v => `${v}`,
   },
-})
+  {
+    key:   'density_pct',
+    label: 'Traffic Density',
+    unit:  '%',
+    color: '#00E5FF',
+    icon:  'bi-speedometer2',
+    yMax:  100,
+    fmt:   v => `${v}%`,
+  },
+  {
+    key:   'occupancy',
+    label: 'Road Occupancy',
+    unit:  '%',
+    color: '#4FC3F7',
+    icon:  'bi-road',
+    yMax:  100,
+    fmt:   v => `${v}%`,
+  },
+  {
+    key:   'congestion_index',
+    label: 'Congestion Index',
+    unit:  '%',
+    color: '#FFB020',
+    icon:  'bi-diagram-3-fill',
+    yMax:  100,
+    fmt:   v => `${v}%`,
+  },
+  {
+    key:   'avg_speed',
+    label: 'Avg Speed',
+    unit:  'km/h',
+    color: '#00E676',
+    icon:  'bi-speedometer',
+    yMax:  130,
+    fmt:   v => `${v} km/h`,
+  },
+  {
+    key:   'signal_efficiency',
+    label: 'Signal Efficiency',
+    unit:  '%',
+    color: '#7B68EE',
+    icon:  'bi-traffic-light-fill',
+    yMax:  100,
+    fmt:   v => `${v}%`,
+  },
+  {
+    key:   'accident_risk',
+    label: 'Accident Risk',
+    unit:  '%',
+    color: '#FF4D6D',
+    icon:  'bi-exclamation-triangle-fill',
+    yMax:  100,
+    fmt:   v => `${v}%`,
+  },
+  {
+    key:   'emergency_vehicle',
+    label: 'Emergency Events',
+    unit:  '',
+    color: '#FF6B35',
+    icon:  'bi-hospital-fill',
+    yMax:  1,
+    fmt:   v => v > 0 ? 'YES' : 'NO',
+  },
+]
 
-const makeLineData = (data, color, label) => ({
-  labels: labels30.slice(-data.length),
-  datasets: [{
-    label,
-    data,
-    borderColor: color,
-    backgroundColor: `${color}22`,
-    fill: true,
-    tension: 0.4,
-    pointRadius: 0,
-    borderWidth: 2,
-  }],
-})
+/* ─── Tooltip ──────────────────────────────────────────────────────────────── */
+const CustomTooltip = ({ active, payload, label, unit, color }) => {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rtc-tooltip">
+      <div className="rtc-tooltip-label">{label}</div>
+      <div className="rtc-tooltip-val" style={{ color }}>
+        {payload[0].value}{unit ? ` ${unit}` : ''}
+      </div>
+    </div>
+  )
+}
 
-const DENSITY_VALS = ['', 'LOW', 'MEDIUM', 'HIGH']
+/* ─── Single chart card ─────────────────────────────────────────────────────── */
+function ChartCard({ def, history, currentVal }) {
+  const gradId = `rtgrad-${def.key}`
 
-export default function Charts({ vehicleHistory, densityHistory, speedHistory, accidentHistory, signal }) {
-  const vh = vehicleHistory?.length ? vehicleHistory : Array(20).fill(0)
-  const dh = densityHistory?.length ? densityHistory : Array(20).fill(0)
-  const sh = speedHistory?.length ? speedHistory : Array(20).fill(30)
-  const ah = accidentHistory?.length ? accidentHistory : Array(20).fill(0)
+  // Build Recharts data array
+  const data = (history || []).map((v, i) => ({
+    t: i === (history.length - 1) ? 'now' : `${i - history.length + 1}s`,
+    value: typeof v === 'number' ? Math.round(v * 10) / 10 : 0,
+  }))
 
-  const sigCount = { RED: 0, YELLOW: 0, GREEN: 0 }
-  if (signal?.includes('GREEN')) sigCount.GREEN++
-  else if (signal === 'YELLOW') sigCount.YELLOW++
-  else sigCount.RED++
+  // Color-based ring around current value
+  const riskColor = def.key === 'accident_risk'
+    ? currentVal > 70 ? '#FF2020'
+      : currentVal > 45 ? '#FFB020'
+      : def.color
+    : def.color
 
   return (
-    <div className="charts-section">
-      <div className="section-title"><i className="bi bi-graph-up" /> LIVE ANALYTICS CHARTS</div>
-
-      <div className="charts-grid">
-        <div className="chart-card glass-card">
-          <h4>Vehicle Count Trend</h4>
-          <div className="chart-body">
-            <Line data={makeLineData(vh, '#00E5FF', 'Vehicles')} options={lineOpts()} />
-          </div>
+    <motion.div
+      className="rtc-card glass-card"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Header */}
+      <div className="rtc-hdr">
+        <div className="rtc-hdr-left">
+          <i className={`bi ${def.icon}`} style={{ color: def.color }} />
+          <span className="rtc-label">{def.label}</span>
         </div>
+        <motion.span
+          className="rtc-cur"
+          style={{ color: riskColor }}
+          key={currentVal}
+          initial={{ scale: 1.15 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.2 }}
+        >
+          {def.fmt(currentVal ?? 0)}
+        </motion.span>
+      </div>
 
-        <div className="chart-card glass-card">
-          <h4>Traffic Density</h4>
-          <div className="chart-body">
-            <Bar
-              data={{
-                labels: labels30.slice(-dh.length),
-                datasets: [{
-                  label: 'Density',
-                  data: dh,
-                  backgroundColor: dh.map(v =>
-                    v >= 3 ? '#EF444466' : v >= 2 ? '#F59E0B66' : '#22C55E66'
-                  ),
-                  borderColor: dh.map(v =>
-                    v >= 3 ? '#EF4444' : v >= 2 ? '#F59E0B' : '#22C55E'
-                  ),
-                  borderWidth: 1,
-                }],
-              }}
-              options={{
-                ...lineOpts(),
-                scales: {
-                  x: { ticks: { color: '#475569', font: { size: 9 } }, grid: { color: '#1e293b' } },
-                  y: {
-                    ticks: {
-                      color: '#475569', font: { size: 9 },
-                      callback: v => DENSITY_VALS[v] || v,
-                    },
-                    grid: { color: '#1e293b' },
-                    min: 0, max: 3,
-                  },
-                },
-              }}
+      {/* Live badge */}
+      <div className="rtc-live">
+        <span className="rtc-live-dot" style={{ background: def.color }} />
+        <span>LIVE</span>
+      </div>
+
+      {/* Recharts AreaChart */}
+      <div className="rtc-chart">
+        <ResponsiveContainer width="100%" height={108} debounce={60}>
+          <AreaChart data={data} margin={{ top: 4, right: 0, bottom: 0, left: -28 }}>
+            <defs>
+              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%"  stopColor={def.color} stopOpacity={0.35} />
+                <stop offset="95%" stopColor={def.color} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(255,255,255,0.04)"
+              vertical={false}
             />
-          </div>
-        </div>
-
-        <div className="chart-card glass-card">
-          <h4>Signal Distribution</h4>
-          <div className="chart-body chart-body-sm">
-            <Doughnut
-              data={{
-                labels: ['RED', 'YELLOW', 'GREEN'],
-                datasets: [{
-                  data: [sigCount.RED || 1, sigCount.YELLOW || 0, sigCount.GREEN || 0],
-                  backgroundColor: ['#EF444466', '#F59E0B66', '#22C55E66'],
-                  borderColor: ['#EF4444', '#F59E0B', '#22C55E'],
-                  borderWidth: 1,
-                }],
-              }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                  legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } },
-                },
-              }}
+            <XAxis
+              dataKey="t"
+              tick={{ fill: '#1e293b', fontSize: 8 }}
+              tickLine={false}
+              axisLine={false}
+              interval="preserveStartEnd"
             />
-          </div>
-        </div>
-
-        <div className="chart-card glass-card">
-          <h4>Average Speed Trend</h4>
-          <div className="chart-body">
-            <Line data={makeLineData(sh, '#F59E0B', 'Speed (km/h)')} options={lineOpts()} />
-          </div>
-        </div>
-
-        <div className="chart-card glass-card">
-          <h4>Congestion Monitoring</h4>
-          <div className="chart-body">
-            <Line
-              data={makeLineData(
-                vh.map(v => Math.min(100, Math.round(v * 4))),
-                '#EF4444', 'Congestion %'
-              )}
-              options={lineOpts()}
+            <YAxis
+              domain={[0, def.yMax]}
+              tick={{ fill: '#1e293b', fontSize: 8 }}
+              tickLine={false}
+              axisLine={false}
+              width={28}
             />
-          </div>
-        </div>
+            <Tooltip
+              content={<CustomTooltip unit={def.unit} color={def.color} />}
+              cursor={{ stroke: `${def.color}40`, strokeWidth: 1 }}
+            />
+            <Area
+              type="monotoneX"
+              dataKey="value"
+              stroke={def.color}
+              strokeWidth={1.8}
+              fill={`url(#${gradId})`}
+              dot={false}
+              activeDot={{ r: 3, fill: def.color, stroke: '#050816', strokeWidth: 2 }}
+              isAnimationActive={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </motion.div>
+  )
+}
 
-        <div className="chart-card glass-card">
-          <h4>Accident Risk Trend</h4>
-          <div className="chart-body">
-            <Line data={makeLineData(ah, '#0EA5E9', 'Risk Score')} options={lineOpts()} />
-          </div>
+/* ─── Main export — 8-chart grid ────────────────────────────────────────────── */
+export default function RealtimeChartsGrid({ rtHistory = {}, rtAnalytics = {} }) {
+  return (
+    <div className="rtc-section">
+      <div className="rtc-section-hdr">
+        <span className="section-title" style={{ marginBottom: 0 }}>
+          <i className="bi bi-graph-up-arrow" /> REAL-TIME AI TRAFFIC ANALYTICS
+        </span>
+        <div className="rtc-section-meta">
+          <span className="rtc-ws-badge">
+            <i className="bi bi-wifi" /> WebSocket Live
+          </span>
+          <span className="rtc-ws-badge rtc-ws-badge--tick">
+            30s rolling window
+          </span>
         </div>
+      </div>
+
+      <div className="rtc-grid">
+        {CHART_DEFS.map(def => (
+          <ChartCard
+            key={def.key}
+            def={def}
+            history={rtHistory[def.key] || []}
+            currentVal={rtAnalytics[def.key] ?? 0}
+          />
+        ))}
       </div>
     </div>
   )

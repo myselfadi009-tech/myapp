@@ -3,18 +3,34 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cameraOn, cameraOff } from '../../utils/api'
 import './CameraFeed.css'
 
-export default function CameraFeed({ isOn, onToggle }) {
-  const [loading, setLoading]         = useState(false)
-  const [fullscreen, setFullscreen]   = useState(false)
+const MAIN_CAM = { cam: 'CAM-07', label: 'Main Street' }
+
+export default function CameraFeed({ isOn, onToggle, activeCam, onResetCam }) {
+  const [loading, setLoading]       = useState(false)
+  const [fullscreen, setFullscreen] = useState(false)
+  const [streamOn, setStreamOn]     = useState(false)
+
+  const cam = activeCam || MAIN_CAM
+  const isJunctionCam = !!activeCam
 
   const toggle = async (state) => {
     setLoading(true)
     try {
       if (state) await cameraOn(); else await cameraOff()
       onToggle(state)
+      setStreamOn(state)
     } catch (e) { console.error(e) }
     finally { setLoading(false) }
   }
+
+  useEffect(() => {
+    setStreamOn(isOn)
+  }, [isOn])
+
+  useEffect(() => {
+    if (isJunctionCam) setStreamOn(true)
+    else setStreamOn(isOn)
+  }, [isJunctionCam, activeCam])
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') setFullscreen(false) }
@@ -22,23 +38,42 @@ export default function CameraFeed({ isOn, onToggle }) {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const showStream = isJunctionCam ? true : streamOn
+
   const feedContent = (isFull) => (
     <>
       {/* Header */}
       <div className="cam-hdr">
         <div className="cam-hdr-left">
           <span className="section-title" style={{ marginBottom: 0 }}>
-            <i className="bi bi-camera-video-fill" /> LIVE FEED — CAM 07 (MAIN STREET)
+            <i className="bi bi-camera-video-fill" /> LIVE FEED — {cam.cam} ({cam.label.toUpperCase()})
           </span>
-          {isOn && <span className="cam-live-tag"><span className="cam-live-dot" />LIVE</span>}
+          {showStream && <span className="cam-live-tag"><span className="cam-live-dot" />LIVE</span>}
+          {isJunctionCam && (
+            <motion.span
+              className="cam-junction-badge"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <i className="bi bi-geo-alt-fill" /> {cam.label}
+            </motion.span>
+          )}
         </div>
         <div className="cam-hdr-btns">
-          <button className={`cam-btn-cmd on ${isOn?'active':''}`} onClick={()=>toggle(true)} disabled={loading||isOn}>
-            <i className="bi bi-power" /> ON
-          </button>
-          <button className={`cam-btn-cmd off ${!isOn?'active':''}`} onClick={()=>toggle(false)} disabled={loading||!isOn}>
-            <i className="bi bi-power" /> OFF
-          </button>
+          {isJunctionCam ? (
+            <button className="cam-btn-cmd cam-btn-reset" onClick={onResetCam} title="Back to main camera">
+              <i className="bi bi-arrow-left-circle" /> MAIN CAM
+            </button>
+          ) : (
+            <>
+              <button className={`cam-btn-cmd on ${streamOn?'active':''}`} onClick={()=>toggle(true)} disabled={loading||streamOn}>
+                <i className="bi bi-power" /> ON
+              </button>
+              <button className={`cam-btn-cmd off ${!streamOn?'active':''}`} onClick={()=>toggle(false)} disabled={loading||!streamOn}>
+                <i className="bi bi-power" /> OFF
+              </button>
+            </>
+          )}
           <button
             className="cam-btn-cmd cam-btn-fs"
             onClick={() => setFullscreen(!isFull)}
@@ -56,7 +91,7 @@ export default function CameraFeed({ isOn, onToggle }) {
         <div className="cam-corner tl" /><div className="cam-corner tr" />
         <div className="cam-corner bl" /><div className="cam-corner br" />
 
-        {isOn ? (
+        {showStream ? (
           <img className="cam-img" src="/api/camera/stream" alt="Live traffic feed" />
         ) : (
           <div className="cam-offline">
@@ -71,13 +106,13 @@ export default function CameraFeed({ isOn, onToggle }) {
           </div>
         )}
 
-        {isOn && (
+        {showStream && (
           <>
             <div className="cam-ov cam-ov-tl">
-              <div className="cam-info-row">Camera: <b>CAM 07</b></div>
-              <div className="cam-info-row">Location: <b>Main Street</b></div>
+              <div className="cam-info-row">Camera: <b>{cam.cam}</b></div>
+              <div className="cam-info-row">Location: <b>{cam.label}</b></div>
             </div>
-            <div className="cam-ov cam-ov-tr cam-id-badge">CAM-07</div>
+            <div className="cam-ov cam-ov-tr cam-id-badge">{cam.cam}</div>
             <div className="cam-ov cam-ov-br">
               <span className="cam-ai-badge"><i className="bi bi-cpu-fill" /> AI DETECTION ACTIVE</span>
               <span className="cam-track-badge"><i className="bi bi-bounding-box" /> YOLO v8</span>
@@ -91,9 +126,18 @@ export default function CameraFeed({ isOn, onToggle }) {
   return (
     <>
       {/* Normal card */}
-      <div className="cam-wrapper glass-card">
-        {feedContent(false)}
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={cam.cam}
+          className="cam-wrapper glass-card"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.25 }}
+        >
+          {feedContent(false)}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Fullscreen overlay */}
       <AnimatePresence>

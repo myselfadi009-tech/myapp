@@ -29,8 +29,8 @@ export default function CommandHeader({ connected }) {
           <div className="ch-logo-ring" />
         </div>
         <div className="ch-titles">
-          <div className="ch-main">SMART CITY</div>
-          <div className="ch-sub">TRAFFIC COMMAND CENTER</div>
+          <div className="ch-main">SmartRoad Command</div>
+          <div className="ch-sub">AI Traffic MANAGEMENT SYSTEM</div>
         </div>
       </div>
 
@@ -87,10 +87,6 @@ export default function CommandHeader({ connected }) {
           </div>
         </div>
 
-        <div className="ch-weather">
-          <i className="bi bi-cloud-sun-fill" />
-          <span>24°C</span>
-        </div>
       </div>
     </motion.header>
   )

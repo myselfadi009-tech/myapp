@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion'
 import AnimatedNumber from '../../hooks/useAnimatedNumber'
-import { DENSITY_COLORS, SIGNAL_COLORS } from '../../utils/constants'
 import './KpiPanel.css'
 
 const buildCards = (d) => [
@@ -12,23 +11,6 @@ const buildCards = (d) => [
     suffix: '',
     color: '#00E5FF',
     trend: '+12.5%', up: true,
-  },
-  {
-    id: 'density',
-    icon: 'bi-bar-chart-fill',
-    label: 'Density',
-    text: d.density || 'LOW',
-    color: DENSITY_COLORS[d.density] || '#00E676',
-    trend: d.density === 'HIGH' ? '+18.7%' : '-3.1%',
-    up: d.density !== 'LOW',
-  },
-  {
-    id: 'signal',
-    icon: 'bi-traffic-light-fill',
-    label: 'Signal',
-    text: (d.signal || 'RED').split(' ')[0],
-    color: SIGNAL_COLORS[d.signal] || '#FF4D6D',
-    trend: 'AUTO', up: true,
   },
   {
     id: 'cameras',

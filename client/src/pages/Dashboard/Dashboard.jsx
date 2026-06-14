@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { connectWS, disconnectWS } from '../../utils/socket'
 
@@ -57,6 +57,7 @@ export default function Dashboard() {
   const [cameraOn, setCameraOn]   = useState(false)
   const [connected, setConnected] = useState(false)
   const [activeCam, setActiveCam] = useState(null)
+  const cameraRef = useRef(null)
 
   useEffect(() => {
     const handler = (data) => {
@@ -81,6 +82,13 @@ export default function Dashboard() {
     setLiveData(prev => ({ ...prev, camera_on: st, active_cameras: st ? 1 : 0 }))
   }
 
+  const handleJunctionClick = (j) => {
+    setActiveCam(j)
+    cameraRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  const handleResetCam = () => setActiveCam(null)
+
   return (
     <motion.div
       className="cmd-page"
@@ -91,9 +99,14 @@ export default function Dashboard() {
       <CommandHeader connected={connected} />
 
       {/* ── Row 1: Camera (70%) + KPI + Controls (30%) ── */}
-      <div className="cmd-row cmd-row-1">
+      <div className="cmd-row cmd-row-1" ref={cameraRef}>
         <div className="cmd-col-camera">
-          <CameraFeed isOn={cameraOn} onToggle={handleCameraToggle} />
+          <CameraFeed
+            isOn={cameraOn}
+            onToggle={handleCameraToggle}
+            activeCam={activeCam}
+            onResetCam={handleResetCam}
+          />
         </div>
         <div className="cmd-col-kpi">
           <KpiPanel data={liveData} />
@@ -106,7 +119,7 @@ export default function Dashboard() {
         <CityMap
           density={liveData.density}
           signal={liveData.signal}
-          onJunctionClick={(j) => setActiveCam(j)}
+          onJunctionClick={handleJunctionClick}
         />
       </div>
 
@@ -124,65 +137,6 @@ export default function Dashboard() {
 
       {/* ── Row 5: Alert Center ── */}
       <AlertCenter />
-
-      {/* ── Junction Camera Modal ── */}
-      <AnimatePresence>
-        {activeCam && (
-          <motion.div
-            className="jcam-overlay"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.22 }}
-            onClick={(e) => { if (e.target === e.currentTarget) setActiveCam(null) }}
-          >
-            <div className="jcam-modal">
-              {/* Modal header */}
-              <div className="jcam-hdr">
-                <div className="jcam-hdr-left">
-                  <i className="bi bi-camera-video-fill" style={{ color: 'var(--primary)' }} />
-                  <span className="jcam-title">LIVE FEED — {activeCam.cam}</span>
-                  <span className="jcam-sub">({activeCam.label})</span>
-                  <span className="cam-live-tag"><span className="cam-live-dot" />LIVE</span>
-                </div>
-                <button className="jcam-close" onClick={() => setActiveCam(null)} title="Close (Esc)">
-                  <i className="bi bi-x-lg" />
-                </button>
-              </div>
-
-              {/* Viewport */}
-              <div className="jcam-viewport">
-                <div className="cam-scanline" />
-                <div className="cam-corner tl" /><div className="cam-corner tr" />
-                <div className="cam-corner bl" /><div className="cam-corner br" />
-
-                {/* Offline state — real streams unavailable */}
-                <div className="cam-offline">
-                  <motion.div className="cam-offline-inner"
-                    animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    <i className="bi bi-camera-video-off-fill" />
-                    <p>CAMERA OFFLINE</p>
-                    <span>{activeCam.cam} · {activeCam.label}</span>
-                  </motion.div>
-                </div>
-
-                {/* Overlays */}
-                <div className="cam-ov cam-ov-tl">
-                  <div className="cam-info-row">Camera: <b>{activeCam.cam}</b></div>
-                  <div className="cam-info-row">Location: <b>{activeCam.label}</b></div>
-                </div>
-                <div className="cam-ov cam-ov-tr cam-id-badge">{activeCam.cam}</div>
-                <div className="cam-ov cam-ov-br">
-                  <span className="cam-ai-badge"><i className="bi bi-cpu-fill" /> AI DETECTION ACTIVE</span>
-                  <span className="cam-track-badge"><i className="bi bi-bounding-box" /> YOLO v8</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   )
 }

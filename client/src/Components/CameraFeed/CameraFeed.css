@@ -179,6 +179,32 @@
   color: var(--secondary);
 }
 
+/* Junction camera badge */
+.cam-junction-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(0,229,255,0.12);
+  border: 1px solid rgba(0,229,255,0.35);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--primary);
+}
+
+/* Back-to-main-cam button */
+.cam-btn-reset {
+  border-color: rgba(0,229,255,0.5);
+  color: var(--primary);
+  background: rgba(0,229,255,0.08);
+}
+.cam-btn-reset:hover {
+  background: rgba(0,229,255,0.18);
+  box-shadow: 0 0 10px rgba(0,229,255,0.3);
+}
+
 /* Maximize / fullscreen button */
 .cam-btn-fs {
   border-color: rgba(0,229,255,0.5);
